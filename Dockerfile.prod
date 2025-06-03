@@ -1,0 +1,27 @@
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npx prisma generate \
+  && npm run build \
+  && npx tsc-alias
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 expressjs
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json .
+
+CMD [ "node", "dist/server.js" ]

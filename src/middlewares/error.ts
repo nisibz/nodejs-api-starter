@@ -1,0 +1,15 @@
+import { NextFunction, Request, Response } from "express";
+import { sendError } from "@/utils/response";
+import { apiPathNotFound } from "@/utils/error";
+
+export const error404Handler = (_req: Request, _res: Response, next: NextFunction): void => {
+  next(apiPathNotFound);
+};
+
+export const errorHandler = (err: any, _req: Request, res: Response, _next: NextFunction): void => {
+  const statusCode = err.status || 500;
+  const errorMessages = err.messages || ["Internal Server Error"];
+  const errorString = Array.isArray(errorMessages) ? errorMessages.join(", ") : errorMessages;
+
+  sendError(res, errorString, statusCode);
+};
