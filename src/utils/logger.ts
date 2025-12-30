@@ -1,29 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import winston from "winston";
-
-const sensitiveFields = ["password", "token", "authorization", "jwt", "secret", "key"];
-
-const filterSensitiveData = (obj: any): any => {
-  if (typeof obj !== "object" || obj === null) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => filterSensitiveData(item));
-  }
-
-  const filtered: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
-      filtered[key] = "[REDACTED]";
-    } else if (typeof value === "object") {
-      filtered[key] = filterSensitiveData(value);
-    } else {
-      filtered[key] = value;
-    }
-  }
-  return filtered;
-};
+import DailyRotateFile from "winston-daily-rotate-file";
+import { asyncLocalStorage, filterSensitiveData } from "./requestContext";
 
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === "production" ? "info" : "debug",
@@ -43,39 +21,84 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+      format: winston.format.combine(winston.format.json()),
     }),
-    new winston.transports.File({
-      filename: "logs/error.log",
+    new DailyRotateFile({
+      filename: "logs/application-%DATE%.log",
+      datePattern: "YYYY-MM-DD",
+      maxSize: "20m",
+      maxFiles: "30d",
+    }),
+    new DailyRotateFile({
+      filename: "logs/error-%DATE%.log",
+      datePattern: "YYYY-MM-DD",
       level: "error",
-    }),
-    new winston.transports.File({
-      filename: "logs/combined.log",
+      maxSize: "20m",
+      maxFiles: "30d",
     }),
   ],
+  defaultMeta: {},
 });
 
+// Helper to get logger with current request context
+export const getLogger = () => {
+  const store = asyncLocalStorage.getStore();
+  if (store) {
+    return logger.child({
+      requestId: store.requestId,
+    });
+  }
+  return logger;
+};
+
+// Log request events - gets context from AsyncLocalStorage
+// MUST be used after initRequestContext middleware
 export const logRequest = (req: Request, res: Response, next: NextFunction): void => {
+  const context = asyncLocalStorage.getStore();
+  if (!context) {
+    return next();
+  }
+
   const startTime = Date.now();
 
+  // Log incoming request WITHOUT body
   logger.info("Incoming request", {
-    method: req.method,
-    url: req.url,
-    userAgent: req.get("User-Agent"),
-    ip: req.ip,
-    body: filterSensitiveData(req.body),
+    requestId: context.requestId,
+    method: context.method,
+    url: context.url,
+    ip: context.ip,
     query: filterSensitiveData(req.query),
     params: req.params,
   });
 
   res.on("finish", () => {
     const duration = Date.now() - startTime;
-    logger.info("Request completed", {
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-    });
+    const isError = res.statusCode >= 400;
+
+    if (isError) {
+      logger.error("Error occurred", {
+        requestId: context.requestId,
+        errorMessage: context.error?.message,
+        errorStack: context.error?.stack,
+        method: context.method,
+        url: context.url,
+        query: filterSensitiveData(context.query),
+        params: filterSensitiveData(context.params),
+        body: filterSensitiveData(context.body),
+        headers: filterSensitiveData(context.headers),
+        ip: context.ip,
+        statusCode: res.statusCode,
+        duration: `${duration}ms`,
+      });
+    } else {
+      logger.info("Request completed", {
+        requestId: context.requestId,
+        method: context.method,
+        url: context.url,
+        statusCode: res.statusCode,
+        duration: `${duration}ms`,
+      });
+    }
   });
 
   next();
@@ -87,6 +110,7 @@ export const logPrismaQuery = (event: {
   duration: number;
   timestamp?: Date;
 }): void => {
+  const logger = getLogger();
   logger.debug("Prisma query executed", {
     query: event.query,
     duration: `${event.duration}ms`,
@@ -95,11 +119,30 @@ export const logPrismaQuery = (event: {
   });
 };
 
-export const logError = (error: Error, context?: any): void => {
+export interface ErrorLogData {
+  errorMessage: string;
+  errorStack?: string;
+  method: string;
+  url: string;
+  query: Record<string, any>;
+  params: Record<string, any>;
+  body: Record<string, any>;
+  headers: Record<string, string | string[] | undefined>;
+  ip: string | undefined;
+}
+
+export const logErrorData = (data: ErrorLogData): void => {
+  const logger = getLogger();
   logger.error("Error occurred", {
-    message: error.message,
-    stack: error.stack,
-    context: filterSensitiveData(context),
+    errorMessage: data.errorMessage,
+    errorStack: data.errorStack,
+    method: data.method,
+    url: data.url,
+    query: filterSensitiveData(data.query),
+    params: filterSensitiveData(data.params),
+    body: filterSensitiveData(data.body),
+    headers: filterSensitiveData(data.headers),
+    ip: data.ip,
   });
 };
 
