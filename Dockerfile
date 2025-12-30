@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY prisma/schema.prisma ./prisma/schema.prisma
+COPY prisma.config.ts ./
 RUN npx prisma generate
 
 CMD ["npm", "run", "dev"]
