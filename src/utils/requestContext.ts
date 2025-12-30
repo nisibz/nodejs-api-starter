@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 
 export interface RequestContext {
   requestId: string;
+  userId?: string;
   body?: any;
   method: string;
   url: string;
@@ -66,10 +67,10 @@ export const initRequestContext = (req: Request, res: Response, next: NextFuncti
   });
 };
 
-// Helper to update error context in AsyncLocalStorage
-export const setErrorContext = (error: { message: string; stack?: string }): void => {
+// Generic function to set context values via partial object
+export const setContext = (values: Partial<RequestContext>): void => {
   const store = asyncLocalStorage.getStore();
   if (store) {
-    store.error = error;
+    Object.assign(store, values);
   }
 };

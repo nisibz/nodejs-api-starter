@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "@/utils/response";
 import { getPaginationParams } from "@/utils/pagination";
 import { getAllUsers } from "@/services/user";
+import { log } from "@/utils/logger";
 
 export const getAllUser = async (
   req: Request,
@@ -19,6 +20,7 @@ export const getAllUser = async (
 
 export const userInfo = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    log("info", "User info", res.locals.user);
     sendSuccess(res, res.locals.user, "User info retrieved successfully");
   } catch (error) {
     next(error);

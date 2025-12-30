@@ -46,6 +46,7 @@ export const getLogger = () => {
   if (store) {
     return logger.child({
       requestId: store.requestId,
+      userId: store.userId,
     });
   }
   return logger;
@@ -64,6 +65,7 @@ export const logRequest = (req: Request, res: Response, next: NextFunction): voi
   // Log incoming request WITHOUT body
   logger.info("Incoming request", {
     requestId: context.requestId,
+    userId: context.userId,
     method: context.method,
     url: context.url,
     ip: context.ip,
@@ -78,6 +80,7 @@ export const logRequest = (req: Request, res: Response, next: NextFunction): voi
     if (isError) {
       logger.error("Error occurred", {
         requestId: context.requestId,
+        userId: context.userId,
         errorMessage: context.error?.message,
         errorStack: context.error?.stack,
         method: context.method,
@@ -93,6 +96,7 @@ export const logRequest = (req: Request, res: Response, next: NextFunction): voi
     } else {
       logger.info("Request completed", {
         requestId: context.requestId,
+        userId: context.userId,
         method: context.method,
         url: context.url,
         statusCode: res.statusCode,
@@ -144,6 +148,15 @@ export const logErrorData = (data: ErrorLogData): void => {
     headers: filterSensitiveData(data.headers),
     ip: data.ip,
   });
+};
+
+// Convenience function - dynamically log with level
+export const log = (
+  level: "info" | "error" | "warn" | "debug",
+  message: string,
+  meta?: Record<string, any>
+): void => {
+  getLogger()[level](message, meta);
 };
 
 export default logger;
