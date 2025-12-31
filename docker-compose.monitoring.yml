@@ -1,0 +1,58 @@
+services:
+  loki:
+    image: grafana/loki:latest
+    container_name: ${WORKSPACE}-loki
+    ports:
+      - ${LOKI_PORT:-3100}:3100
+    volumes:
+      - loki-data:/loki
+      - ./config/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: ${WORKSPACE}-promtail
+    volumes:
+      - ./config/promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - logs:/var/logs:ro
+    command: -config.file=/etc/promtail/config.yaml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ${WORKSPACE}-grafana
+    ports:
+      - ${GRAFANA_PORT:-3000}:3000
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_FEATURE_TOGGLES_ENABLE=alertingSimplifiedRouting,alertingQueryAndExpressionsStepMode
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+        - name: Loki
+          type: loki
+          access: proxy
+          orgId: 1
+          url: http://loki:3100
+          basicAuth: false
+          isDefault: true
+          version: 1
+          editable: false
+        EOF
+        /run.sh
+
+volumes:
+  loki-data:
+    name: ${WORKSPACE}-loki-data
+  logs:
+    name: ${WORKSPACE}-logs
+
+networks:
+  monitoring:
+    name: ${WORKSPACE}-monitoring

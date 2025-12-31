@@ -6,6 +6,7 @@ services:
       - ${PORT:-3000}:${PORT:-3000}
     volumes:
       - .:/app
+      - logs:/app/logs
     environment:
       - POSTGRES_HOST=postgres
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -31,6 +32,8 @@ services:
 volumes:
   postgres:
     name: ${WORKSPACE}-datastore
+  logs:
+    name: ${WORKSPACE}-logs
 
 networks:
   default:
