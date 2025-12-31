@@ -57,7 +57,12 @@ describe("Auth Integration Tests", (): void => {
         .expect(400);
 
       expect(res.body).toHaveProperty("success", false);
-      expect(res.body.message).toContain("must have required property 'email'");
+      expect(res.body).toHaveProperty("message", "Validation failed");
+      expect(res.body).toHaveProperty("errors");
+      expect(Array.isArray(res.body.errors)).toBe(true);
+      const emailError = res.body.errors.find((e: any) => e.field === "email");
+      expect(emailError).toBeDefined();
+      expect(emailError.code).toBe("REQUIRED");
     });
 
     test("should fail login with missing password", async (): Promise<void> => {
@@ -67,7 +72,12 @@ describe("Auth Integration Tests", (): void => {
         .expect(400);
 
       expect(res.body).toHaveProperty("success", false);
-      expect(res.body.message).toContain("must have required property 'password'");
+      expect(res.body).toHaveProperty("message", "Validation failed");
+      expect(res.body).toHaveProperty("errors");
+      expect(Array.isArray(res.body.errors)).toBe(true);
+      const passwordError = res.body.errors.find((e: any) => e.field === "password");
+      expect(passwordError).toBeDefined();
+      expect(passwordError.code).toBe("REQUIRED");
     });
 
     test("should fail with weak password", async (): Promise<void> => {
@@ -80,7 +90,12 @@ describe("Auth Integration Tests", (): void => {
         .expect(400);
 
       expect(res.body).toHaveProperty("success", false);
-      expect(res.body).toHaveProperty("message", "password: must NOT have fewer than 6 characters");
+      expect(res.body).toHaveProperty("message", "Validation failed");
+      expect(res.body).toHaveProperty("errors");
+      const passwordError = res.body.errors.find((e: any) => e.field === "password");
+      expect(passwordError).toBeDefined();
+      expect(passwordError.code).toBe("MIN_LENGTH");
+      expect(passwordError.message).toContain("6 characters");
     });
 
     test("should treat email case-insensitively", async (): Promise<void> => {

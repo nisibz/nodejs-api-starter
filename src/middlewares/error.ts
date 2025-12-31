@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { sendError } from "@/utils/response";
-import { apiPathNotFound } from "@/utils/error";
+import { sendError, sendValidationError } from "@/utils/response";
+import { apiPathNotFound, ErrorType, ValidationError } from "@/utils/error";
 import { setContext } from "@/utils/requestContext";
 
 export const error404Handler = (_req: Request, _res: Response, next: NextFunction): void => {
@@ -20,5 +20,16 @@ export const errorHandler = (err: any, _req: Request, res: Response, _next: Next
     },
   });
 
-  sendError(res, errorString, statusCode, err.stack);
+  // Route validation errors to structured response
+  if (err.type === ErrorType.Validation && err.validationErrors) {
+    sendValidationError(
+      res,
+      errorMessages[0] || "Validation failed",
+      err.validationErrors,
+      statusCode,
+      err.stack
+    );
+  } else {
+    sendError(res, errorString, statusCode, err.stack);
+  }
 };
