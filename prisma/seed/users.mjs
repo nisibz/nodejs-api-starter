@@ -1,13 +1,6 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const connectionString = process.env.DATABASE_URL;
-const adapter = new PrismaPg({ connectionString });
-
-const prisma = new PrismaClient({ adapter });
-
-async function seedUsers() {
+async function seedUsers(prisma) {
   try {
     const usersToCreate = Array.from({ length: 5 }, (_v, i) => ({
       email: `user${i + 1}@example.com`,

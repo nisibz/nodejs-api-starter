@@ -9,7 +9,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function seed() {
   try {
-    await seedUsers();
+    await seedUsers(prisma);
     console.log("Database seeded successfully!");
   } catch (error) {
     console.error("Seeding error:", error);
