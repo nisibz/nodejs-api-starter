@@ -8,7 +8,7 @@ addFormats(ajv);
 
 // Map Ajv errors to structured format
 const mapAjvError = (error: any): ValidationError => {
-  let field = error.instancePath.replace("/", "") || error.params?.missingProperty || "";
+  let field = error.instancePath.replace("/", "") || error.params?.missingProperty || error.params?.additionalProperty || "";
   const keyword = error.keyword;
 
   const errorMapping: Record<string, { message: string; code: string }> = {
