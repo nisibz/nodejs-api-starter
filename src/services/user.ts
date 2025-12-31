@@ -1,20 +1,30 @@
 import { User } from "@prisma/client";
 import { notFound } from "@/utils/error";
 import {
-  PaginationParams,
+  QueryParams,
   PaginatedResponse,
   calculatePagination,
   getPrismaSkipTake,
+  buildPrismaOrderBy,
+  buildPrismaSearchWhere,
 } from "@/utils/pagination";
 import { countUser, findAllUsers, findUserById } from "@/repositories/user";
 
+const USER_SEARCHABLE_FIELDS = ['email'];
+
 export const getAllUsers = async (
-  paginationParams: PaginationParams,
+  queryParams: QueryParams,
 ): Promise<PaginatedResponse<Omit<User, "password">>> => {
-  const { page, limit } = paginationParams;
+  const { page, limit, sort, order, search } = queryParams;
   const { skip, take } = getPrismaSkipTake(page, limit);
 
-  const [users, total] = await Promise.all([findAllUsers(skip, take), countUser()]);
+  const where = buildPrismaSearchWhere(search, USER_SEARCHABLE_FIELDS);
+  const orderBy = buildPrismaOrderBy(sort, order);
+
+  const [users, total] = await Promise.all([
+    findAllUsers(skip, take, where, orderBy),
+    countUser(where),
+  ]);
 
   const usersWithoutPassword = users.map(({ password, ...rest }) => rest);
   const pagination = calculatePagination(page, limit, total);

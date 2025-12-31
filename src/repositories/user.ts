@@ -11,21 +11,29 @@ export const createUser = async (data: Prisma.UserCreateInput): Promise<User> =>
   }
 };
 
-export const findAllUsers = async (skip: number, take: number): Promise<User[]> => {
+export const findAllUsers = async (
+  skip: number,
+  take: number,
+  where?: Prisma.UserWhereInput,
+  orderBy?: Prisma.UserOrderByWithRelationInput
+): Promise<User[]> => {
   try {
     return await prisma.user.findMany({
       skip,
       take,
-      orderBy: { createdAt: "desc" },
+      where,
+      orderBy: orderBy || { createdAt: "desc" },
     });
   } catch (error) {
     throw error;
   }
 };
 
-export const countUser = async (): Promise<number> => {
+export const countUser = async (
+  where?: Prisma.UserWhereInput
+): Promise<number> => {
   try {
-    return await prisma.user.count();
+    return await prisma.user.count({ where });
   } catch (error) {
     throw error;
   }

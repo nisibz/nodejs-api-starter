@@ -1,8 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "@/utils/response";
-import { getPaginationParams } from "@/utils/pagination";
+import { getQueryParams, SortableFieldsConfig } from "@/utils/pagination";
 import { getAllUsers } from "@/services/user";
 import { log } from "@/utils/logger";
+
+const USER_SORTABLE_CONFIG: SortableFieldsConfig = {
+  fields: ['id', 'email', 'createdAt', 'updatedAt'],
+  defaultField: 'createdAt',
+  defaultOrder: 'desc',
+};
 
 export const getAllUser = async (
   req: Request,
@@ -10,8 +16,8 @@ export const getAllUser = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const paginationParams = getPaginationParams(req.query);
-    const result = await getAllUsers(paginationParams);
+    const queryParams = getQueryParams(req.query, USER_SORTABLE_CONFIG);
+    const result = await getAllUsers(queryParams);
     sendSuccess(res, result, "Users retrieved successfully");
   } catch (error) {
     next(error);
