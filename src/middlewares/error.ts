@@ -20,5 +20,5 @@ export const errorHandler = (err: any, _req: Request, res: Response, _next: Next
     },
   });
 
-  sendError(res, errorString, statusCode);
+  sendError(res, errorString, statusCode, err.stack);
 };

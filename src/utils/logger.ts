@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import winston from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
-import { asyncLocalStorage, filterSensitiveData } from "./requestContext";
+import { asyncLocalStorage, filterSensitiveData, RequestContext } from "./requestContext";
 
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === "production" ? "info" : "debug",
@@ -52,6 +52,15 @@ export const getLogger = () => {
   return logger;
 };
 
+// Helper to build common log context
+const buildLogContext = (context: RequestContext) => ({
+  requestId: context.requestId,
+  userId: context.userId,
+  method: context.method,
+  url: context.url,
+  ip: context.ip,
+});
+
 // Log request events - gets context from AsyncLocalStorage
 // MUST be used after initRequestContext middleware
 export const logRequest = (req: Request, res: Response, next: NextFunction): void => {
@@ -64,13 +73,9 @@ export const logRequest = (req: Request, res: Response, next: NextFunction): voi
 
   // Log incoming request WITHOUT body
   logger.info("Incoming request", {
-    requestId: context.requestId,
-    userId: context.userId,
-    method: context.method,
-    url: context.url,
-    ip: context.ip,
+    ...buildLogContext(context),
     query: filterSensitiveData(req.query),
-    params: req.params,
+    params: filterSensitiveData(req.params),
   });
 
   res.on("finish", () => {
@@ -79,26 +84,21 @@ export const logRequest = (req: Request, res: Response, next: NextFunction): voi
 
     if (isError) {
       logger.error("Error occurred", {
-        requestId: context.requestId,
-        userId: context.userId,
-        errorMessage: context.error?.message,
-        errorStack: context.error?.stack,
-        method: context.method,
-        url: context.url,
+        ...buildLogContext(context),
+        error: {
+          message: context.error?.message,
+          stack: context.error?.stack,
+        },
         query: filterSensitiveData(context.query),
         params: filterSensitiveData(context.params),
         body: filterSensitiveData(context.body),
         headers: filterSensitiveData(context.headers),
-        ip: context.ip,
         statusCode: res.statusCode,
         duration: `${duration}ms`,
       });
     } else {
       logger.info("Request completed", {
-        requestId: context.requestId,
-        userId: context.userId,
-        method: context.method,
-        url: context.url,
+        ...buildLogContext(context),
         statusCode: res.statusCode,
         duration: `${duration}ms`,
       });
@@ -123,40 +123,13 @@ export const logPrismaQuery = (event: {
   });
 };
 
-export interface ErrorLogData {
-  errorMessage: string;
-  errorStack?: string;
-  method: string;
-  url: string;
-  query: Record<string, any>;
-  params: Record<string, any>;
-  body: Record<string, any>;
-  headers: Record<string, string | string[] | undefined>;
-  ip: string | undefined;
-}
-
-export const logErrorData = (data: ErrorLogData): void => {
-  const logger = getLogger();
-  logger.error("Error occurred", {
-    errorMessage: data.errorMessage,
-    errorStack: data.errorStack,
-    method: data.method,
-    url: data.url,
-    query: filterSensitiveData(data.query),
-    params: filterSensitiveData(data.params),
-    body: filterSensitiveData(data.body),
-    headers: filterSensitiveData(data.headers),
-    ip: data.ip,
-  });
-};
-
 // Convenience function - dynamically log with level
 export const log = (
   level: "info" | "error" | "warn" | "debug",
   message: string,
-  meta?: Record<string, any>
+  meta?: Record<string, any>,
 ): void => {
-  getLogger()[level](message, meta);
+  getLogger()[level](message, { detail: meta });
 };
 
 export default logger;
