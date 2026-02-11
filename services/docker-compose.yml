@@ -30,7 +30,7 @@ services:
     container_name: ${WORKSPACE}-promtail
     volumes:
       - ./config/promtail-config.yaml:/etc/promtail/config.yaml:ro
-      - logs:/var/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/config.yaml
     restart: always
     depends_on:
@@ -89,8 +89,6 @@ volumes:
     name: ${WORKSPACE}-datastore
   loki-data:
     name: ${WORKSPACE}-loki-data
-  logs:
-    name: ${WORKSPACE}-logs
   pgadmin-data:
     name: ${WORKSPACE}-pgadmin-data
 

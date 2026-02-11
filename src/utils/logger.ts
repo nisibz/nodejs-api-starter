@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import winston from "winston";
-import DailyRotateFile from "winston-daily-rotate-file";
 import { asyncLocalStorage, filterSensitiveData, RequestContext } from "./requestContext";
 
 const logger = winston.createLogger({
@@ -22,19 +21,6 @@ const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(winston.format.json()),
-    }),
-    new DailyRotateFile({
-      filename: "logs/application-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      maxSize: "20m",
-      maxFiles: "30d",
-    }),
-    new DailyRotateFile({
-      filename: "logs/error-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      level: "error",
-      maxSize: "20m",
-      maxFiles: "30d",
     }),
   ],
   defaultMeta: {},

@@ -2,20 +2,17 @@ services:
   api:
     build: .
     container_name: ${WORKSPACE}-api
+    labels:
+      app: ${WORKSPACE}
     ports:
       - ${PORT:-3000}:${PORT:-3000}
     volumes:
       - .:/app
-      - logs:/app/logs
     environment:
       - POSTGRES_HOST=postgres
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     env_file: .env
     restart: always
-
-volumes:
-  logs:
-    name: ${WORKSPACE}-logs
 
 networks:
   default:
