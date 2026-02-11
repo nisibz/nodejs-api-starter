@@ -1,6 +1,21 @@
 services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: ${WORKSPACE}-postgres
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    env_file: .env
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.6.3
     container_name: ${WORKSPACE}-loki
     ports:
       - ${LOKI_PORT:-3100}:3100
@@ -8,17 +23,21 @@ services:
       - loki-data:/loki
       - ./config/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
+    restart: always
 
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:3.2.1
     container_name: ${WORKSPACE}-promtail
     volumes:
       - ./config/promtail-config.yaml:/etc/promtail/config.yaml:ro
       - logs:/var/logs:ro
     command: -config.file=/etc/promtail/config.yaml
+    restart: always
+    depends_on:
+      - loki
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.2
     container_name: ${WORKSPACE}-grafana
     ports:
       - ${GRAFANA_PORT:-3000}:3000
@@ -46,13 +65,18 @@ services:
           editable: false
         EOF
         /run.sh
+    restart: always
+    depends_on:
+      - loki
 
 volumes:
+  postgres:
+    name: ${WORKSPACE}-datastore
   loki-data:
     name: ${WORKSPACE}-loki-data
   logs:
     name: ${WORKSPACE}-logs
 
 networks:
-  monitoring:
-    name: ${WORKSPACE}-monitoring
+  default:
+    name: ${WORKSPACE}-network
