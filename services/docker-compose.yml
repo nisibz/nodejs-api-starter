@@ -69,6 +69,21 @@ services:
     depends_on:
       - loki
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ${WORKSPACE}-pgadmin
+    ports:
+      - ${PGADMIN_PORT:-5050}:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-pgadmin@example.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    restart: always
+    depends_on:
+      - postgres
+
 volumes:
   postgres:
     name: ${WORKSPACE}-datastore
@@ -76,6 +91,8 @@ volumes:
     name: ${WORKSPACE}-loki-data
   logs:
     name: ${WORKSPACE}-logs
+  pgadmin-data:
+    name: ${WORKSPACE}-pgadmin-data
 
 networks:
   default:
