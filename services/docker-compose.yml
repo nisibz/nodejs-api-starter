@@ -63,11 +63,38 @@ services:
           isDefault: true
           version: 1
           editable: false
+        - name: Tempo
+          type: tempo
+          access: proxy
+          orgId: 1
+          url: http://tempo:3200
+          basicAuth: false
+          isDefault: false
+          version: 1
+          editable: false
+          jsonData:
+            httpMethod: POST
+            serviceMap:
+              datasourceUid: 'loki'
         EOF
         /run.sh
     restart: always
     depends_on:
       - loki
+      - tempo
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: ${WORKSPACE}-tempo
+    user: "0"
+    ports:
+      - ${TEMPO_PORT:-3200}:3200
+      - ${TEMPO_OTLP_PORT:-4318}:4318
+    volumes:
+      - ./config/tempo-config.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/tmp/tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    restart: always
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -89,6 +116,8 @@ volumes:
     name: ${WORKSPACE}-datastore
   loki-data:
     name: ${WORKSPACE}-loki-data
+  tempo-data:
+    name: ${WORKSPACE}-tempo-data
   pgadmin-data:
     name: ${WORKSPACE}-pgadmin-data
 

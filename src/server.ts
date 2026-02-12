@@ -1,3 +1,4 @@
+import "./config/otel";
 import express from "express";
 import { config } from "./config/config";
 import { routes } from "./routers";

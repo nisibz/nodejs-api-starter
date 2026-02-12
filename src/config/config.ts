@@ -11,4 +11,5 @@ export const config = {
     ? process.env.ALLOWED_ORIGINS.split(",")
     : ["http://localhost:3000"],
   database_url: process.env.DATABASE_URL || "",
+  tempo_otlp_endpoint: process.env.TEMPO_OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
 };
