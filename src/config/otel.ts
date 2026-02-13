@@ -10,6 +10,7 @@ const traceExporter = new OTLPTraceExporter({
 const sdk = new NodeSDK({
   traceExporter,
   instrumentations: [getNodeAutoInstrumentations()],
+  serviceName: config.workspace,
 });
 
 sdk.start();
