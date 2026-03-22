@@ -1,12 +1,12 @@
 import { Response } from "express";
-import { asyncLocalStorage } from "@/utils/requestContext";
+import { trace } from "@opentelemetry/api";
 import { ValidationError } from "@/utils/error";
 
 interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
-  requestId?: string;
+  traceId?: string;
   errorStack?: string;
   errors?: ValidationError[];
 }
@@ -31,11 +31,11 @@ export const sendError = (
   statusCode: number = 400,
   errorStack?: string,
 ): void => {
-  const store = asyncLocalStorage.getStore();
+  const span = trace.getActiveSpan();
   const response: ApiResponse = {
     success: false,
     message,
-    ...(store && { requestId: store.requestId }),
+    ...(span && { traceId: span.spanContext().traceId }),
     ...(errorStack && { errorStack }),
   };
   res.status(statusCode).json(response);
@@ -48,12 +48,12 @@ export const sendValidationError = (
   statusCode: number = 400,
   errorStack?: string,
 ): void => {
-  const store = asyncLocalStorage.getStore();
+  const span = trace.getActiveSpan();
   const response: ApiResponse = {
     success: false,
     message,
     errors,
-    ...(store && { requestId: store.requestId }),
+    ...(span && { traceId: span.spanContext().traceId }),
     ...(errorStack && { errorStack }),
   };
   res.status(statusCode).json(response);

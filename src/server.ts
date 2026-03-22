@@ -3,8 +3,7 @@ import express from "express";
 import { config } from "./config/config";
 import { routes } from "./routers";
 import cors from "cors";
-import logger, { logRequest } from "@/utils/logger";
-import { initRequestContext } from "@/utils/requestContext";
+import logger from "@/utils/logger";
 import { error404Handler, errorHandler } from "./middlewares/error";
 
 // Use allowed origins from config
@@ -21,9 +20,6 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Initialize request context BEFORE logRequest
-app.use(initRequestContext);
-app.use(logRequest);
 
 routes(app);
 

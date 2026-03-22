@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { invalidToken, missingAuthToken } from "@/utils/error";
 import { verifyToken } from "@/utils/jwt";
 import { getUserById } from "@/services/user";
-import { setContext } from "@/utils/requestContext";
 
 export const authenticate = async (
   req: Request,
@@ -17,8 +16,6 @@ export const authenticate = async (
 
     const token = authHeader.split(" ")[1];
     const decoded = verifyToken(token);
-
-    setContext({ userId: decoded.id });
 
     const user = await getUserById(decoded.id);
 

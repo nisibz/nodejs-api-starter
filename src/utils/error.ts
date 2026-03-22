@@ -16,13 +16,33 @@ export interface IErrorInfo {
   validationErrors?: ValidationError[];
 }
 
-class ErrorInfo implements IErrorInfo {
+class ErrorInfo extends Error implements IErrorInfo {
+  status?: number;
+  messages?: string[];
+  type: ErrorType;
+  validationErrors?: ValidationError[];
+
   constructor(
-    public status?: number,
-    public messages?: string[],
-    public type: ErrorType = ErrorType.Simple,
-    public validationErrors?: ValidationError[],
-  ) {}
+    status?: number,
+    messages?: string[],
+    type: ErrorType = ErrorType.Simple,
+    validationErrors?: ValidationError[],
+  ) {
+    // Call Error constructor with the first message
+    const message = Array.isArray(messages) ? messages[0] : undefined;
+    super(message || "An error occurred");
+
+    // Set the prototype explicitly for instanceof checks
+    Object.setPrototypeOf(this, ErrorInfo.prototype);
+
+    this.status = status;
+    this.messages = messages;
+    this.type = type;
+    this.validationErrors = validationErrors;
+
+    // Ensure stack trace points to where error was thrown, not where it was created
+    Error.captureStackTrace?.(this, ErrorInfo);
+  }
 }
 
 export const notFound = (module: string): ErrorInfo => new ErrorInfo(400, [`${module} not found`]);
