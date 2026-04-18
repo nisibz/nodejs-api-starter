@@ -1,4 +1,27 @@
 {
-  "extends": "../tsconfig.json",
-  "include": ["**/*"]
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "lib": ["es2020"],
+    "outDir": "../dist",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node10",
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "../",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node", "jest"],
+    "composite": true,
+    "tsBuildInfoFile": "../dist/.tsbuildinfo-tests"
+  },
+  "include": ["**/*"],
+  "references": [
+    { "path": "../" }
+  ]
 }

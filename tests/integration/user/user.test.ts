@@ -22,10 +22,10 @@ describe("User Integration Tests", (): void => {
     await prisma.$disconnect();
   });
 
-  describe(`GET ${apiUserPath}/all`, (): void => {
+  describe(`GET ${apiUserPath}`, (): void => {
     test(` should return all users without passwords with pagination`, async (): Promise<void> => {
       const res = await request(app)
-        .get(apiUserPath + "/all?page=1&limit=10")
+        .get(apiUserPath + "?page=1&limit=10")
         .expect(200);
       expect(res.body).toHaveProperty("success", true);
       expect(res.body).toHaveProperty("message", "Users retrieved successfully");
@@ -49,9 +49,7 @@ describe("User Integration Tests", (): void => {
     });
 
     test(`should return users with default pagination when no params provided`, async (): Promise<void> => {
-      const res = await request(app)
-        .get(apiUserPath + "/all")
-        .expect(200);
+      const res = await request(app).get(apiUserPath).expect(200);
       expect(res.body).toHaveProperty("success", true);
       expect(res.body.data.pagination).toHaveProperty("page", 1);
       expect(res.body.data.pagination).toHaveProperty("limit", 10);
