@@ -15,10 +15,7 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
 
   // Log error with filtered body (method/url/ip in OpenTelemetry traces)
   logger.error("Request error", {
-    error: {
-      message: typeof err.message === 'string' ? err.message : JSON.stringify(err.message) || errorString,
-      stack: err.stack,
-    },
+    error: err,
     body: filterSensitiveData(req.body),
   });
 
@@ -29,7 +26,7 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
       errorMessages[0] || "Validation failed",
       err.validationErrors,
       statusCode,
-      err.stack
+      err.stack,
     );
   } else {
     sendError(res, errorString, statusCode, err.stack);
